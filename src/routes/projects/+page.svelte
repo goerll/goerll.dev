@@ -18,6 +18,70 @@
 						<div class="flex flex-row gap-4 items-start">
 							<div class="relative h-14 w-14 flex-shrink-0">
 								<a
+									href="https://cardboard.goerll.dev"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="block h-full w-full overflow-hidden rounded-md transition-transform duration-300 hover:scale-105"
+								>
+									<StaticImage
+										alt="Cardboard logo"
+										src="/assets/cardboard_logo.svg"
+										class="object-contain"
+									/>
+								</a>
+							</div>
+
+							<div class="flex flex-col w-full min-w-0 gap-1.5">
+								<div class="flex flex-row items-center gap-3 w-full justify-between">
+									<div class="flex flex-row items-center gap-2 flex-wrap min-w-0">
+										<a
+											class="font-semibold text-base sm:text-lg transition-colors hover:text-primary"
+											href="https://cardboard.goerll.dev"
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											Cardboard
+										</a>
+										<span class="rounded-full border border-border/70 bg-secondary/55 px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+											Rust
+										</span>
+										<span class="rounded-full border border-border/70 bg-secondary/55 px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+											TypeScript
+										</span>
+										<span class="rounded-full border border-border/70 bg-secondary/55 px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+											MCP
+										</span>
+									</div>
+									<a
+										href="https://cardboard.goerll.dev"
+										target="_blank"
+										rel="noopener noreferrer"
+										class="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground transition hover:bg-secondary/80 flex-shrink-0"
+									>
+										<ExternalLink class="w-3 h-3" />
+										<span>live</span>
+									</a>
+								</div>
+								<div class="text-muted-foreground text-sm leading-relaxed">
+									Open source design editor where you and your AI agent work on the same canvas, with
+									real HTML and CSS layers and an MCP server for Claude Code, Codex or Cursor.
+								</div>
+							</div>
+						</div>
+
+						<div class="overflow-hidden rounded-md border border-border/60 bg-black/35">
+							<StaticImage
+								alt="Cardboard screenshot"
+								src="/assets/cardboard_preview.png"
+								class="w-full object-cover"
+							/>
+						</div>
+					</div>
+
+					<div class="flex flex-col gap-4 rounded-md border border-border/65 bg-card/52 p-4 backdrop-blur-2xl shadow-[0_0_0_1px_rgba(8,14,13,0.3),0_18px_48px_rgba(0,0,0,0.14)]">
+						<div class="flex flex-row gap-4 items-start">
+							<div class="relative h-14 w-14 flex-shrink-0">
+								<a
 									href="https://drawtomata.com"
 									target="_blank"
 									rel="noopener noreferrer"
