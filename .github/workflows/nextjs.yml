@@ -44,12 +44,12 @@ jobs:
         run: pnpm build
       - name: Prepare Pages artifact
         run: |
-          cp CNAME out/
-          touch out/.nojekyll
+          cp CNAME build/
+          touch build/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ./build
 
   # Deployment job
   deploy:

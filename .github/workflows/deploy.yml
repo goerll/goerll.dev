@@ -37,4 +37,4 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y rsync
 
       - name: Deploy
-        run: rsync -az --delete -e "ssh -i ~/.ssh/deploy_key" --rsync-path='mkdir -p /var/www/goerll/build && rsync' out/ projects@91.98.232.237:/var/www/goerll/build/
+        run: rsync -az --delete -e "ssh -i ~/.ssh/deploy_key" --rsync-path='mkdir -p /var/www/goerll/build && rsync' build/ projects@91.98.232.237:/var/www/goerll/build/
