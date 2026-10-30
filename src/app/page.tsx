@@ -42,8 +42,6 @@ export default function Home() {
 					))}
 				</p>
 			</section>
-
-			<p className="label mt-auto self-end pt-16">temperature 0.7</p>
 		</>
 	);
 }

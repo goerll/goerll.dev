@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Mono } from 'next/font/google';
 import Link from 'next/link';
+import { Background } from '@/components/Background';
 import { Nav } from '@/components/Nav';
 import './globals.css';
 
@@ -25,7 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 	return (
 		<html lang="en" className={plex.variable}>
 			<body>
-				<div className="mx-auto flex min-h-screen w-full max-w-page flex-col px-6 pb-24 pt-8 sm:pt-11 lg:px-0">
+				<Background />
+				<div className="relative mx-auto flex min-h-screen w-full max-w-page flex-col px-6 pb-24 pt-8 sm:pt-11 lg:px-0">
 					<nav className="flex items-baseline justify-between text-sm leading-[22px] text-muted">
 						<Link href="/" className="text-ink">
 							estevão goerll
