@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	html,
+	body {
+		@apply bg-bg font-mono text-ink;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	::selection {
+		@apply bg-moss text-bg;
+	}
+
+	a:focus-visible,
+	button:focus-visible {
+		@apply rounded-sm outline outline-1 outline-offset-4 outline-moss;
+	}
+}
+
+@layer components {
+	/* activation tint: a phrase lit up like a neuron-activation viewer */
+	.tint {
+		@apply rounded-[2px] px-[3px] py-px text-ink;
+		background-color: rgba(159, 191, 127, var(--a, 0.3));
+		-webkit-box-decoration-break: clone;
+		box-decoration-break: clone;
+	}
+
+	.token {
+		@apply bg-moss px-[3px] py-px text-bg;
+	}
+
+	.cursor {
+		@apply ml-1 inline-block h-[22px] w-[11px] bg-moss align-[-4px] opacity-50;
+		animation: blink 1.1s steps(1) infinite;
+	}
+
+	.prompt {
+		@apply text-base leading-7 text-dim;
+	}
+
+	.lede {
+		@apply text-[19px] font-normal leading-[30px] text-ink sm:text-[22px] sm:leading-[34px];
+	}
+
+	.label {
+		@apply text-[13px] leading-5 text-dim;
+	}
+}
+
+@keyframes blink {
+	50% {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cursor {
+		animation: none;
+	}
+}
