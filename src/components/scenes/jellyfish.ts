@@ -5,7 +5,8 @@ import { type Env, type Scene, INK, MOSS, rand } from './types';
 // Bells pulse (contract, push, glide), tentacles trail behind on a chain, the
 // rims glow moss, and each push leaves a faint ring in the water. The cursor
 // nudges them away and makes them glow; a click makes nearby ones pulse.
-// Grab a bell to drag it around; let go mid-swing to toss it.
+// Grab a bell to drag it around: it lags on a soft spring, swings around the
+// held spot, leans and stretches into the motion; let go mid-swing to toss it.
 // On reading pages (env.focus) they steer into the side margins and fade
 // wherever they pass behind the text column.
 
@@ -25,6 +26,10 @@ interface Jelly {
 	y: number;
 	r: number;
 	angle: number;
+	/** how fast the body is turning, radians per frame */
+	spin: number;
+	/** -0.5 flattened (pushed backwards) to 1 stretched (rushing forwards) */
+	stretch: number;
 	speed: number;
 	period: number;
 	clock: number;
@@ -64,8 +69,8 @@ export function jellyfish(env: Env): Scene {
 	const rings: Ring[] = [];
 	let cols = 0;
 	let cells = new Map<number, Cell>();
-	/** the jelly being dragged, held at an offset from the pointer */
-	let held: { j: Jelly; dx: number; dy: number } | null = null;
+	/** the jelly being dragged, held by a spot (u, v) in its own body coords */
+	let held: { j: Jelly; u: number; v: number } | null = null;
 
 	/** Bell squash for a jelly right now: 0 relaxed, 1 fully contracted. */
 	const contraction = (j: Jelly) => {
@@ -102,6 +107,8 @@ export function jellyfish(env: Env): Scene {
 			y,
 			r: rand(56, 96),
 			angle: rand(-0.35, 0.35),
+			spin: 0,
+			stretch: 0,
 			speed: 0.2,
 			period: rand(200, 300),
 			clock: rand(0, 300),
@@ -174,14 +181,33 @@ export function jellyfish(env: Env): Scene {
 				j.clock = (j.clock + dt) % j.period;
 				if (j.clock < before) rings.push({ ...toWorld(j, 0, j.r * 0.2), r: j.r * 0.6, life: 1 });
 
+				// the bell leans and stretches into its motion: forward speed along
+				// its axis streamlines it, being shoved backwards flattens it
+				const along = j.vx * Math.sin(j.angle) - j.vy * Math.cos(j.angle);
+				j.stretch += (Math.max(-0.5, Math.min(1, along / 8)) - j.stretch) * 0.15 * dt;
+
 				if (held?.j === j) {
-					// follow the pointer; tentacles trail behind on their chains
-					const ox = j.x;
-					const oy = j.y;
-					j.x = pointer.x + held.dx;
-					j.y = pointer.y + held.dy;
-					j.vx += ((j.x - ox) / dt - j.vx) * 0.5;
-					j.vy += ((j.y - oy) / dt - j.vy) * 0.5;
+					// the held spot is pulled toward the pointer on a soft spring, so
+					// the bell lags a little and swings around where it's held
+					const g = toWorld(j, held.u, held.v);
+					j.vx += (pointer.x - g.x) * 0.14 * dt;
+					j.vy += (pointer.y - g.y) * 0.14 * dt;
+					j.vx *= Math.pow(0.7, dt);
+					j.vy *= Math.pow(0.7, dt);
+					j.x += j.vx * dt;
+					j.y += j.vy * dt;
+					// tip toward the way it's dragged, wobbling a bit as it settles,
+					// turning around the held spot rather than the bell's middle
+					const pin = toWorld(j, held.u, held.v);
+					const lean = Math.max(-0.9, Math.min(0.9, j.vx * 0.07));
+					j.spin += (lean - j.angle) * 0.04 * dt;
+					j.spin *= Math.pow(0.86, dt);
+					j.angle += j.spin * dt;
+					const turned = toWorld(j, held.u, held.v);
+					j.x += pin.x - turned.x;
+					j.y += pin.y - turned.y;
+					// startled: it pulses faster while held
+					j.clock = (j.clock + dt * 0.8) % j.period;
 					j.glow = 1;
 					for (const t of [...j.tentacles, ...j.arms]) stepChain(j, t, time, t.seg === 5 ? 4 : 3.2);
 					continue;
@@ -191,7 +217,11 @@ export function jellyfish(env: Env): Scene {
 				j.speed += contraction(j) * 0.035 * dt;
 				j.speed += (0.12 - j.speed) * 0.012 * dt;
 				j.angle += Math.sin(time * 0.00025 + j.seed) * 0.0012 * dt;
-				j.angle = Math.max(-0.55, Math.min(0.55, j.angle));
+				// after a throw, finish the swing, then right itself
+				j.angle += j.spin * dt;
+				j.spin *= Math.pow(0.86, dt);
+				const tilt = Math.max(-0.55, Math.min(0.55, j.angle));
+				j.angle += (tilt - j.angle) * 0.04 * dt;
 
 				const dx = j.x - pointer.x;
 				const dy = j.y - pointer.y;
@@ -273,8 +303,8 @@ export function jellyfish(env: Env): Scene {
 				}
 
 				// the bell: half an ellipse, squashed narrower and taller on each push
-				const bw = j.r * (1 - squeeze * 0.16);
-				const bh = j.r * 0.62 * (1 + squeeze * 0.14);
+				const bw = j.r * (1 - squeeze * 0.16) * (1 - j.stretch * 0.1);
+				const bh = j.r * 0.62 * (1 + squeeze * 0.14) * (1 + j.stretch * 0.18);
 				const reach = Math.ceil((j.r * 1.3) / C);
 				const cx = Math.floor(j.x / C);
 				const cy = Math.floor(j.y / C);
@@ -332,8 +362,10 @@ export function jellyfish(env: Env): Scene {
 		grab(x, y) {
 			const j = at(x, y);
 			if (!j) return false;
-			held = { j, dx: j.x - x, dy: j.y - y };
-			j.vx = j.vy = 0;
+			// remember the spot in body coords, so it stays put as the body turns
+			const s = Math.sin(j.angle);
+			const c = Math.cos(j.angle);
+			held = { j, u: (x - j.x) * c + (y - j.y) * s, v: -(x - j.x) * s + (y - j.y) * c };
 			// bring it to the front
 			jellies.splice(jellies.indexOf(j), 1);
 			jellies.push(j);
