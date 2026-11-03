@@ -25,6 +25,11 @@ export interface Scene {
 	step(dt: number, t: number): void;
 	draw(t: number): void;
 	click?(x: number, y: number): void;
+	/** whether something at (x, y) can be picked up */
+	hit?(x: number, y: number): boolean;
+	/** pick up what's at (x, y); it follows env.pointer until release */
+	grab?(x: number, y: number): boolean;
+	release?(): void;
 }
 
 export const rand = (a: number, b: number) => a + Math.random() * (b - a);

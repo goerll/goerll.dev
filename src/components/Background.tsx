@@ -7,7 +7,12 @@ import type { Env } from './scenes/types';
 
 // The living background: jellyfish drifting up behind the page (see
 // scenes/jellyfish.ts). On reading pages they keep to the side margins and
-// fade behind the text column, so the prose stays easy to read.
+// fade behind the text column, so the prose stays easy to read. The canvas
+// ignores pointer events so the page stays usable; instead, a press that lands
+// on a bell, and not on a link or control, picks that jelly up.
+
+const INTERACTIVE = 'a, button, input, textarea, select, label, summary, [contenteditable], [role="button"]';
+const onPage = (e: PointerEvent) => !(e.target instanceof Element && e.target.closest(INTERACTIVE));
 
 /** Matches the layout's content column: max-w-page (1040px) with px-6. */
 function column(w: number) {
@@ -59,22 +64,48 @@ export function Background() {
 			if (reduceMotion) scene.draw(performance.now());
 		}
 
+		const root = document.documentElement;
+		let dragging = false;
 		const onMove = (e: PointerEvent) => {
 			env.pointer.x = e.clientX;
 			env.pointer.y = e.clientY;
 			env.pointer.seen = true;
 			env.pointer.movedAt = performance.now();
+			if (!dragging && !reduceMotion) {
+				root.style.cursor = e.pointerType === 'mouse' && onPage(e) && scene.hit?.(e.clientX, e.clientY) ? 'grab' : '';
+			}
 		};
 		const onLeave = () => {
+			if (dragging) return;
 			env.pointer.x = env.pointer.y = -1e4;
 			env.pointer.seen = false;
 		};
-		const onDown = (e: PointerEvent) => scene.click?.(e.clientX, e.clientY);
+		const onDown = (e: PointerEvent) => {
+			onMove(e);
+			if (!reduceMotion && e.button === 0 && onPage(e) && scene.grab?.(e.clientX, e.clientY)) {
+				// no text selection or scrolling while holding a jelly
+				e.preventDefault();
+				dragging = true;
+				root.style.cursor = 'grabbing';
+				root.style.userSelect = 'none';
+				root.style.touchAction = 'none';
+				return;
+			}
+			scene.click?.(e.clientX, e.clientY);
+		};
+		const onUp = () => {
+			if (!dragging) return;
+			dragging = false;
+			scene.release?.();
+			root.style.cursor = root.style.userSelect = root.style.touchAction = '';
+		};
 
 		resize();
 		window.addEventListener('resize', resize);
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerdown', onDown);
+		window.addEventListener('pointerup', onUp);
+		window.addEventListener('pointercancel', onUp);
 		document.documentElement.addEventListener('pointerleave', onLeave);
 
 		let raf = 0;
@@ -93,6 +124,9 @@ export function Background() {
 			window.removeEventListener('resize', resize);
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerdown', onDown);
+			window.removeEventListener('pointerup', onUp);
+			window.removeEventListener('pointercancel', onUp);
+			onUp();
 			document.documentElement.removeEventListener('pointerleave', onLeave);
 			envRef.current = null;
 		};

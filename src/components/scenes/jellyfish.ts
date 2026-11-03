@@ -5,6 +5,7 @@ import { type Env, type Scene, INK, MOSS, rand } from './types';
 // Bells pulse (contract, push, glide), tentacles trail behind on a chain, the
 // rims glow moss, and each push leaves a faint ring in the water. The cursor
 // nudges them away and makes them glow; a click makes nearby ones pulse.
+// Grab a bell to drag it around; let go mid-swing to toss it.
 // On reading pages (env.focus) they steer into the side margins and fade
 // wherever they pass behind the text column.
 
@@ -28,6 +29,9 @@ interface Jelly {
 	period: number;
 	clock: number;
 	glow: number;
+	/** leftover momentum from being thrown, px per frame */
+	vx: number;
+	vy: number;
 	seed: number;
 	tentacles: Tentacle[];
 	arms: Tentacle[];
@@ -60,6 +64,8 @@ export function jellyfish(env: Env): Scene {
 	const rings: Ring[] = [];
 	let cols = 0;
 	let cells = new Map<number, Cell>();
+	/** the jelly being dragged, held at an offset from the pointer */
+	let held: { j: Jelly; dx: number; dy: number } | null = null;
 
 	/** Bell squash for a jelly right now: 0 relaxed, 1 fully contracted. */
 	const contraction = (j: Jelly) => {
@@ -100,6 +106,8 @@ export function jellyfish(env: Env): Scene {
 			period: rand(200, 300),
 			clock: rand(0, 300),
 			glow: 0,
+			vx: 0,
+			vy: 0,
 			seed: rand(0, 100),
 			tentacles: [],
 			arms: []
@@ -110,6 +118,16 @@ export function jellyfish(env: Env): Scene {
 		}
 		for (const at of [-0.3, -0.1, 0.1, 0.3]) j.arms.push(chain(j, at, Math.round(j.r / 5), 5));
 		return j;
+	}
+
+	/** The jelly whose bell covers (x, y), topmost first. */
+	function at(x: number, y: number) {
+		for (let i = jellies.length - 1; i >= 0; i--) {
+			const j = jellies[i];
+			const mid = toWorld(j, 0, -j.r * 0.25);
+			if (Math.hypot(mid.x - x, mid.y - y) < j.r * 0.8) return j;
+		}
+		return null;
 	}
 
 	function put(x: number, y: number, a: number, color: string, ch: string, fill = true) {
@@ -156,6 +174,19 @@ export function jellyfish(env: Env): Scene {
 				j.clock = (j.clock + dt) % j.period;
 				if (j.clock < before) rings.push({ ...toWorld(j, 0, j.r * 0.2), r: j.r * 0.6, life: 1 });
 
+				if (held?.j === j) {
+					// follow the pointer; tentacles trail behind on their chains
+					const ox = j.x;
+					const oy = j.y;
+					j.x = pointer.x + held.dx;
+					j.y = pointer.y + held.dy;
+					j.vx += ((j.x - ox) / dt - j.vx) * 0.5;
+					j.vy += ((j.y - oy) / dt - j.vy) * 0.5;
+					j.glow = 1;
+					for (const t of [...j.tentacles, ...j.arms]) stepChain(j, t, time, t.seg === 5 ? 4 : 3.2);
+					continue;
+				}
+
 				// pulse: a push during the squeeze, then a long glide
 				j.speed += contraction(j) * 0.035 * dt;
 				j.speed += (0.12 - j.speed) * 0.012 * dt;
@@ -184,6 +215,11 @@ export function jellyfish(env: Env): Scene {
 
 				const ox = j.x;
 				const oy = j.y;
+				// a thrown jelly coasts, slowing in the water
+				j.x += j.vx * dt;
+				j.y += j.vy * dt;
+				j.vx *= Math.pow(0.94, dt);
+				j.vy *= Math.pow(0.94, dt);
 				j.x += Math.sin(j.angle) * j.speed * dt;
 				j.y -= Math.cos(j.angle) * j.speed * dt;
 				// once the whole body, tentacles included, has left the top, come
@@ -291,6 +327,24 @@ export function jellyfish(env: Env): Scene {
 			for (const j of jellies) {
 				if (Math.hypot(j.x - x, j.y - y) < j.r * 4) j.clock = 0;
 			}
+		},
+		hit: (x, y) => at(x, y) !== null,
+		grab(x, y) {
+			const j = at(x, y);
+			if (!j) return false;
+			held = { j, dx: j.x - x, dy: j.y - y };
+			j.vx = j.vy = 0;
+			// bring it to the front
+			jellies.splice(jellies.indexOf(j), 1);
+			jellies.push(j);
+			return true;
+		},
+		release() {
+			if (!held) return;
+			const { j } = held;
+			const v = Math.hypot(j.vx, j.vy);
+			if (v > 20) (j.vx *= 20 / v), (j.vy *= 20 / v);
+			held = null;
 		}
 	};
 }
