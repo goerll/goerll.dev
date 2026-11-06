@@ -7,10 +7,10 @@ import type { Env } from './scenes/types';
 
 // The living background: jellyfish drifting up behind the page (see
 // scenes/jellyfish.ts). On home they swim around the text block (marked
-// data-avoid), and a corner counter tallies them like daoho.dev's koi. On reading pages they keep to the side margins and
-// fade behind the text column, so the prose stays easy to read. The canvas
-// ignores pointer events so the page stays usable; instead, a press that lands
-// on a bell, and not on a link or control, picks that jelly up.
+// data-avoid). On reading pages they keep to the side margins and fade behind
+// the text column, so the prose stays easy to read. The canvas ignores pointer
+// events so the page stays usable; instead, a press that lands on a bell, and
+// not on a link or control, picks that jelly up.
 
 const INTERACTIVE = 'a, button, input, textarea, select, label, summary, [contenteditable], [role="button"]';
 const onPage = (e: PointerEvent) => !(e.target instanceof Element && e.target.closest(INTERACTIVE));
@@ -25,7 +25,6 @@ function column(w: number) {
 export function Background() {
 	const ref = useRef<HTMLCanvasElement>(null);
 	const envRef = useRef<Env | null>(null);
-	const statsRef = useRef<HTMLDivElement>(null);
 	const pathname = usePathname();
 	const reading = pathname !== '/';
 
@@ -116,14 +115,12 @@ export function Background() {
 		themeWatch.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
 		let raf = 0;
-		let frames = 0;
 		let last = performance.now();
 		const frame = (now: number) => {
 			const dt = Math.min(now - last, 50) / 16.67;
 			last = now;
 			// on phones the text spans the width, so there's nothing to swim around
 			env.avoid = env.w >= 1024 ? Array.from(document.querySelectorAll('[data-avoid]'), (el) => el.getBoundingClientRect()) : [];
-			if (statsRef.current && frames++ % 15 === 0) statsRef.current.textContent = scene.stats?.() ?? '';
 			scene.step(dt, now);
 			scene.draw(now);
 			raf = requestAnimationFrame(frame);
@@ -144,16 +141,5 @@ export function Background() {
 		};
 	}, []);
 
-	return (
-		<>
-			<canvas ref={ref} aria-hidden="true" className="pointer-events-none fixed inset-0 h-full w-full" />
-			{!reading && (
-				<div
-					ref={statsRef}
-					aria-hidden="true"
-					className="pointer-events-none fixed right-6 top-8 hidden whitespace-pre sm:block text-right text-[11px] leading-[18px] tabular-nums text-dim sm:top-11 lg:right-[max(24px,calc((100vw-1040px)/2))]"
-				/>
-			)}
-		</>
-	);
+	return <canvas ref={ref} aria-hidden="true" className="pointer-events-none fixed inset-0 h-full w-full" />;
 }

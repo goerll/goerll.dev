@@ -31,8 +31,6 @@ export interface Scene {
 	/** pick up what's at (x, y); it follows env.pointer until release */
 	grab?(x: number, y: number): boolean;
 	release?(): void;
-	/** a short readout for the corner counter */
-	stats?(): string;
 }
 
 export const rand = (a: number, b: number) => a + Math.random() * (b - a);

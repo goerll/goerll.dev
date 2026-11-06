@@ -3,8 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-	/* dark water by night, sunlit shallows by day; the layout's head script
-	   picks one from the time in Blumenau, and the nav toggle flips it */
+	/* dark water by default; the nav toggle switches to sunlit shallows */
 	:root {
 		--bg: 26 25 24;
 		--ink: 232 230 225;
@@ -75,6 +74,19 @@
 
 	.lede {
 		@apply text-[19px] font-normal leading-[30px] text-ink sm:text-[22px] sm:leading-[34px];
+	}
+
+	/* one line, always: the font shrinks with the screen so the headline fits.
+	   Plex Mono glyphs are 0.6em wide; the line is 49ch on wider screens and
+	   30ch on phones, plus 69px for the page padding, highlight and cursor */
+	.lede-line {
+		@apply whitespace-nowrap;
+		font-size: min(19px, calc((100vw - 69px) / 18));
+	}
+	@media (min-width: 640px) {
+		.lede-line {
+			font-size: min(22px, calc((100vw - 69px) / 29.4));
+		}
 	}
 
 	.label {

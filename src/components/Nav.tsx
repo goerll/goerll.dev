@@ -35,7 +35,7 @@ export function Nav() {
 	);
 }
 
-/** Flips the theme the layout's head script picked from the time in Blumenau. */
+/** Switches between the dark default and the light theme. */
 function ThemeToggle() {
 	const [light, setLight] = useState<boolean | null>(null);
 	useEffect(() => setLight(document.documentElement.dataset.theme === 'light'), []);

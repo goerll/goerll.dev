@@ -85,7 +85,6 @@ export function jellyfish(env: Env): Scene {
 	let cells = new Map<number, Cell>();
 	/** the jelly being dragged, held by a spot (u, v) in its own body coords */
 	let held: { j: Jelly; u: number; v: number } | null = null;
-	let thrown = 0;
 
 	/** Bell squash for a jelly right now: 0 relaxed, 1 fully contracted. */
 	const contraction = (j: Jelly) => {
@@ -452,13 +451,8 @@ export function jellyfish(env: Env): Scene {
 			if (!held) return;
 			const { j } = held;
 			const v = Math.hypot(j.vx, j.vy);
-			if (v > 6) thrown++;
 			if (v > 20) (j.vx *= 20 / v), (j.vy *= 20 / v);
 			held = null;
-		},
-		stats() {
-			const inView = jellies.filter((j) => j.y > -j.r && j.y < env.h + j.r * 0.3).length;
-			return `${inView} in view\n${thrown} thrown`;
 		}
 	};
 }
