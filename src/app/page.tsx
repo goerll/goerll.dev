@@ -7,41 +7,56 @@ const links = [
 	{ label: 'email', href: 'mailto:estevaogoerlln@gmail.com' }
 ];
 
+const facts = [
+	{ label: 'now', text: 'leading frontend & apps @ Nexus' },
+	{ label: 'before', text: 'software engineer @ Mouts TI' },
+	{ label: 'studied', text: 'computer science @ IFC, a thesis on how code models think' },
+	{ label: 'on the side', text: 'opening models up to see how they think' }
+];
+
+// The top of the page is open water for the jellyfish; the text sits low, in
+// one block they swim around (data-avoid, see Background).
 export default function Home() {
 	return (
-		<>
-			<section className="mt-28 flex flex-col gap-7 sm:mt-[188px]">
-				<p className="prompt">&gt; what does estevão do?</p>
-				<SampledHeadline />
-			</section>
+		<div className="flex flex-1 flex-col justify-end pt-[26vh] lg:pl-[150px]">
+			<section data-avoid className="flex max-w-[640px] flex-col">
+				<p className="text-[15px] leading-7 text-soft">Hello, I&apos;m Estevão.</p>
+				<div className="mt-2">
+					<SampledHeadline />
+				</div>
+				<p className="mt-5 text-[15px] leading-7 text-soft">
+					I care about the small stuff: what the screen shows you, how long you wait, what you can
+					undo.
+				</p>
 
-			<section className="mt-12 flex flex-col gap-7 text-[15px] leading-7 sm:text-base md:mt-[214px]">
-				<p className="max-w-[960px] text-soft">
-					I care about the small stuff: what the screen shows you, how long you wait, what you
-					can undo.
-					<br className="hidden lg:inline" />{' '}
-					Lately that&apos;s a lot of agents and AI tools, which I also use every day to build. On
-					the side, I open models up to see how they think.
-				</p>
-				<p className="text-sm leading-[22px] text-muted">
-					Hello, I&apos;m Estevão · leading frontend &amp; apps @ Nexus · Blumenau, Brazil
-				</p>
-				<p className="text-sm text-soft">
-					{links.map((link, i) => (
-						<Fragment key={link.label}>
-							{i > 0 && <span className="text-sep"> / </span>}
-							<a
-								href={link.href}
-								target={link.href.startsWith('http') ? '_blank' : undefined}
-								rel="noopener noreferrer"
-								className="transition-colors hover:text-moss"
-							>
-								{link.label}
-							</a>
+				<dl className="mt-10 grid gap-x-6 text-sm leading-6 sm:grid-cols-[auto_1fr] sm:gap-y-1.5">
+					{facts.map((f) => (
+						<Fragment key={f.label}>
+							<dt className="text-dim">{f.label}</dt>
+							<dd className="mb-3 text-soft sm:mb-0">{f.text}</dd>
 						</Fragment>
 					))}
-				</p>
+				</dl>
+
+				<div className="mt-10 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 text-sm">
+					<p className="text-soft">
+						{links.map((link, i) => (
+							<Fragment key={link.label}>
+								{i > 0 && <span className="text-sep"> / </span>}
+								<a
+									href={link.href}
+									target={link.href.startsWith('http') ? '_blank' : undefined}
+									rel="noopener noreferrer"
+									className="underline decoration-sep underline-offset-[5px] transition-colors hover:text-accent hover:decoration-current"
+								>
+									{link.label}
+								</a>
+							</Fragment>
+						))}
+					</p>
+					<p className="text-dim">Blumenau, Brazil</p>
+				</div>
 			</section>
-		</>
+		</div>
 	);
 }

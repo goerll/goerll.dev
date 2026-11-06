@@ -1,18 +1,23 @@
-import { type Env, type Scene, INK, MOSS, rand } from './types';
+import { type Env, type Scene, INK, rand } from './types';
 
-// A few large jellyfish drifting up through dark water, drawn the way the
+// A few large moon jellies drifting up through dark water, drawn the way the
 // daoho.dev koi are: on a grid of cells, each with a shade and a character.
-// Bells pulse (contract, push, glide), tentacles trail behind on a chain, the
-// rims glow moss, and each push leaves a faint ring in the water. The cursor
-// nudges them away and makes them glow; a click makes nearby ones pulse.
+// The bells are white glass; the only color on the page is the faint lilac of
+// the four gonad rings inside each one. Bells pulse (contract, push, glide),
+// tentacles trail behind on a chain, and each push leaves a faint ring in the
+// water. Behind them, marine snow sinks through slow
+// shafts of light from the surface. The cursor nudges the jellies away, makes
+// them glow and parts the snow; a click makes nearby jellies pulse.
 // Grab a bell to drag it around: it lags on a soft spring, swings around the
 // held spot, leans and stretches into the motion; let go mid-swing to toss it.
-// On reading pages (env.focus) they steer into the side margins and fade
-// wherever they pass behind the text column.
+// On home they swim around the text (env.avoid); on reading pages (env.focus)
+// they steer into the side margins and fade wherever they pass behind the
+// text column.
 
 const C = 10; // cell size in px
-const WARM = '227,201,168';
-const BG = '21,22,20';
+// dark water by night, sunlit shallows on paper by day (see globals.css)
+const DARK = { glass: '226,224,218', lilac: '214,160,198', bg: '26,25,24', snow: INK, glassK: 1, lilacK: 1, shafts: 1 };
+const LIGHT = { glass: '58,55,50', lilac: '170,92,120', bg: '236,235,230', snow: '90,86,80', glassK: 0.9, lilacK: 1.2, shafts: 0.7 };
 
 interface Tentacle {
 	/** where it hangs from, across the bell: -1 (left rim) to 1 (right rim) */
@@ -49,6 +54,14 @@ interface Ring {
 	life: number;
 }
 
+interface Flake {
+	x: number;
+	y: number;
+	/** depth, 0.2 far to 1 near: nearer flakes are brighter and sink faster */
+	z: number;
+	seed: number;
+}
+
 interface Cell {
 	a: number;
 	color: string;
@@ -67,10 +80,12 @@ export function jellyfish(env: Env): Scene {
 	const { ctx, pointer } = env;
 	let jellies: Jelly[] = [];
 	const rings: Ring[] = [];
+	let snow: Flake[] = [];
 	let cols = 0;
 	let cells = new Map<number, Cell>();
 	/** the jelly being dragged, held by a spot (u, v) in its own body coords */
 	let held: { j: Jelly; u: number; v: number } | null = null;
+	let thrown = 0;
 
 	/** Bell squash for a jelly right now: 0 relaxed, 1 fully contracted. */
 	const contraction = (j: Jelly) => {
@@ -97,6 +112,9 @@ export function jellyfish(env: Env): Scene {
 			if (f && f.left > 60) return Math.random() < 0.5 ? rand(0, f.left) : rand(f.right, env.w);
 			return rand(env.w * 0.05, env.w * 0.95);
 		});
+		// on home, come up beside the text rather than under it
+		const clear = candidates.filter((x) => env.avoid.every((r) => x < r.left - 60 || x > r.right + 60));
+		if (clear.length) candidates.splice(0, candidates.length, ...clear);
 		const room = (x: number) => Math.min(...jellies.map((o) => Math.abs(o.x - x)));
 		return candidates.reduce((best, x) => (room(x) > room(best) ? x : best));
 	}
@@ -123,7 +141,7 @@ export function jellyfish(env: Env): Scene {
 		for (let i = 0; i < count; i++) {
 			j.tentacles.push(chain(j, -0.95 + (1.9 * i) / (count - 1), Math.round(rand(26, 46) * (j.r / 60)), 6));
 		}
-		for (const at of [-0.3, -0.1, 0.1, 0.3]) j.arms.push(chain(j, at, Math.round(j.r / 5), 5));
+		for (const at of [-0.3, -0.1, 0.1, 0.3]) j.arms.push(chain(j, at, Math.round(j.r / 4.6), 5));
 		return j;
 	}
 
@@ -174,6 +192,9 @@ export function jellyfish(env: Env): Scene {
 				jellies.push(spawn(((i + 0.5) / count) * env.w + rand(-60, 60), rand(env.h * 0.15, env.h * 0.95)));
 			}
 			jellies = jellies.slice(0, count);
+			const flakes = Math.round((env.w * env.h) / 5000);
+			while (snow.length < flakes) snow.push({ x: rand(0, env.w), y: rand(0, env.h), z: rand(0.2, 1), seed: rand(0, 100) });
+			snow = snow.slice(0, flakes);
 		},
 		step(dt, time) {
 			for (const j of jellies) {
@@ -242,6 +263,19 @@ export function jellyfish(env: Env): Scene {
 					const toRight = f.right + j.r * 0.6 - j.x;
 					j.x += (toLeft < toRight ? -1 : 1) * 0.35 * dt;
 				}
+				// on home, swim around the text block: out over the top or to the nearer side
+				for (const r of env.avoid) {
+					const top = r.top - j.r * 0.6;
+					if (j.x > r.left - j.r && j.x < r.right + j.r && j.y > top && j.y < r.bottom + j.r * 0.4) {
+						const up = j.y - top;
+						const left = j.x - (r.left - j.r);
+						const right = r.right + j.r - j.x;
+						const m = Math.min(up, left, right);
+						if (m === up) j.y -= 0.9 * dt;
+						else if (m === left) j.x -= 0.9 * dt;
+						else j.x += 0.9 * dt;
+					}
+				}
 
 				const ox = j.x;
 				const oy = j.y;
@@ -272,33 +306,76 @@ export function jellyfish(env: Env): Scene {
 				rings[i].life -= 0.012 * dt;
 				if (rings[i].life <= 0) rings.splice(i, 1);
 			}
+			for (const f of snow) {
+				f.y += (0.06 + f.z * 0.22) * dt;
+				f.x += Math.sin(time * 0.0004 + f.seed) * 0.12 * dt;
+				// the snow parts around the cursor and slides off the bells
+				const dx = f.x - pointer.x;
+				const dy = f.y - pointer.y;
+				const d = Math.hypot(dx, dy) || 1;
+				if (d < 90) {
+					const k = (1 - d / 90) * 2.2;
+					f.x += (dx / d) * k * dt;
+					f.y += (dy / d) * k * dt;
+				}
+				for (const j of jellies) {
+					const ex = f.x - j.x;
+					const ey = f.y - j.y;
+					const e = Math.hypot(ex, ey) || 1;
+					if (e < j.r * 0.9) {
+						f.x += (ex / e) * 0.6 * dt;
+						f.y += (ey / e) * 0.6 * dt;
+					}
+				}
+				if (f.y > env.h + 10) (f.y = -10), (f.x = rand(0, env.w));
+				if (f.x < -10) f.x = env.w + 10;
+				if (f.x > env.w + 10) f.x = -10;
+			}
 		},
-		draw() {
+		draw(time) {
 			cells = new Map();
+			const pal = document.documentElement.dataset.theme === 'light' ? LIGHT : DARK;
+
+			// three slanted shafts of light from the surface, slowly swaying
+			for (let i = 0; i < 3; i++) {
+				const x0 = env.w * (0.18 + i * 0.3) + Math.sin(time * 0.00012 + i * 2) * 60;
+				const width = 50 + i * 14 + Math.sin(time * 0.0002 + i) * 14;
+				const depth = env.h * 0.85;
+				for (let y = 0; y < depth; y += C) {
+					const mid = x0 + y * 0.32;
+					const fade = 1 - y / depth;
+					for (let x = mid - width / 2; x < mid + width / 2; x += C) {
+						const edge = 1 - Math.abs(x - mid) / (width / 2);
+						put(x, y, 0.035 * fade * edge * pal.shafts, pal.snow, hash(Math.floor(x / C), Math.floor(y / C), i) > 0.7 ? '.' : ' ');
+					}
+				}
+			}
+
+			for (const f of snow) put(f.x, f.y, 0.05 + f.z * 0.16, pal.snow, f.z > 0.75 ? '*' : f.z > 0.45 ? '·' : '.', false);
 
 			for (const ring of rings) {
 				const steps = Math.ceil((ring.r * Math.PI) / C);
 				for (let s = 0; s <= steps; s++) {
 					// the lower half of a ring, pushed out behind the bell
 					const a = (s / steps) * Math.PI;
-					put(ring.x + Math.cos(a) * ring.r, ring.y + Math.sin(a) * ring.r * 0.45, ring.life * 0.12, INK, s % 2 ? '-' : '.', false);
+					put(ring.x + Math.cos(a) * ring.r, ring.y + Math.sin(a) * ring.r * 0.45, ring.life * 0.1, pal.snow, s % 2 ? '-' : '.', false);
 				}
 			}
 
 			for (const j of jellies) {
 				const squeeze = contraction(j);
-				const glow = 0.25 + j.glow * 0.35;
+				const glow = (0.25 + j.glow * 0.35) * 1.45;
 
 				for (const t of j.tentacles) {
 					t.points.forEach((p, i) => {
 						const fade = 1 - i / t.points.length;
-						put(p.x, p.y, 0.05 + fade * 0.2, INK, i % 4 === 0 ? ':' : '.', false);
+						put(p.x, p.y, (0.05 + fade * 0.2) * 0.9 * pal.glassK, pal.glass, i % 4 === 0 ? ':' : '.', false);
 					});
 				}
 				for (const t of j.arms) {
 					t.points.forEach((p, i) => {
 						const fade = 1 - i / t.points.length;
-						put(p.x, p.y, 0.08 + fade * 0.12, WARM, hash(i, t.at, j.seed) > 0.5 ? 'S' : '%');
+						put(p.x, p.y, (0.08 + fade * 0.12) * 1.1 * pal.glassK, pal.glass, hash(i, t.at, j.seed) > 0.5 ? 'S' : '%');
 					});
 				}
 
@@ -324,11 +401,11 @@ export function jellyfish(env: Env): Scene {
 						const theta = Math.atan2(v, u);
 						const h = hash(Math.round(u / C), Math.round(v / C), j.seed);
 						if (r > 0.8 || v > 0) {
-							put(gx * C, gy * C, glow, MOSS, h > 0.5 ? 'S' : 'X');
+							put(gx * C, gy * C, glow * pal.glassK, pal.glass, h > 0.5 ? 'S' : 'X');
 						} else if (r > 0.28 && r < 0.58 && Math.abs(Math.cos(2 * theta)) > 0.55) {
-							put(gx * C, gy * C, 0.2 + j.glow * 0.1, WARM, 'o');
+							put(gx * C, gy * C, (0.2 + j.glow * 0.1) * 1.9 * pal.lilacK, pal.lilac, 'o');
 						} else {
-							put(gx * C, gy * C, 0.1 + (1 - r) * 0.1 + j.glow * 0.1, INK, h > 0.66 ? '%' : h > 0.33 ? 'x' : ':');
+							put(gx * C, gy * C, (0.1 + (1 - r) * 0.1 + j.glow * 0.1) * 1.3 * pal.glassK, pal.glass, h > 0.66 ? '%' : h > 0.33 ? 'x' : ':');
 						}
 					}
 				}
@@ -349,7 +426,7 @@ export function jellyfish(env: Env): Scene {
 				}
 				// like the koi: dark glyphs on bright cells, light glyphs on faint ones
 				ctx.fillStyle =
-					cell.fill && a > 0.18 ? `rgba(${BG},${Math.min(0.55, a * 1.4)})` : `rgba(${cell.color},${Math.min(0.4, a * 2.2)})`;
+					cell.fill && a > 0.18 ? `rgba(${pal.bg},${Math.min(0.55, a * 1.4)})` : `rgba(${cell.color},${Math.min(0.4, a * 2.2)})`;
 				ctx.fillText(cell.ch, x + C / 2, y + C / 2 + 0.5);
 			}
 		},
@@ -375,8 +452,13 @@ export function jellyfish(env: Env): Scene {
 			if (!held) return;
 			const { j } = held;
 			const v = Math.hypot(j.vx, j.vy);
+			if (v > 6) thrown++;
 			if (v > 20) (j.vx *= 20 / v), (j.vy *= 20 / v);
 			held = null;
+		},
+		stats() {
+			const inView = jellies.filter((j) => j.y > -j.r && j.y < env.h + j.r * 0.3).length;
+			return `${inView} in view\n${thrown} thrown`;
 		}
 	};
 }

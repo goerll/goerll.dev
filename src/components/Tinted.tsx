@@ -1,5 +1,5 @@
 // Prose with a few phrases lit up like a neuron-activation viewer.
-// Plain strings render as-is; { t, a } renders t with a moss tint of alpha a.
+// Plain strings render as-is; { t, a } renders t with a tint of alpha a.
 export type Part = string | { t: string; a: number };
 
 export function Tinted({ parts }: { parts: Part[] }) {

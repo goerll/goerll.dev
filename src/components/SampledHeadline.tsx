@@ -47,15 +47,14 @@ export function SampledHeadline() {
 
 	return (
 		<>
-			<h1 className="lede">
+			<h1 className="lede relative">
 				I design and build software that feels{' '}
-				<span className="relative inline-block">
-					<span className="token">{shown}</span>
-					{topK('absolute left-0 top-[calc(100%+12px)] z-10 hidden w-[220px] md:flex')}
-				</span>
+				<span className="token">{shown}</span>
 				<span className="cursor" aria-hidden="true" />
+				{/* beside the headline, not the token, so resampling never moves it */}
+				{topK('absolute left-[calc(100%+24px)] top-0 z-10 hidden w-[200px] xl:flex')}
 			</h1>
-			{topK('flex w-full md:hidden')}
+			{topK('mt-5 flex w-full xl:hidden')}
 		</>
 	);
 }

@@ -1,6 +1,5 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { IBM_Plex_Mono } from 'next/font/google';
-import Link from 'next/link';
 import { Background } from '@/components/Background';
 import { Nav } from '@/components/Nav';
 import './globals.css';
@@ -18,20 +17,21 @@ export const metadata: Metadata = {
 	icons: { icon: '/icon.png' }
 };
 
-export const viewport: Viewport = {
-	themeColor: '#151614'
-};
+// Runs before first paint, so the page never flashes the wrong theme: daytime
+// in Blumenau opens in the light theme, night in the dark one. The nav toggle
+// flips it for the rest of the visit.
+const pickTheme = `try{var h=+new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',hour:'numeric',hourCycle:'h23'}).format(new Date());document.documentElement.dataset.theme=h>=6&&h<18?'light':'dark'}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className={plex.variable}>
+		<html lang="en" className={plex.variable} data-theme="dark" suppressHydrationWarning>
+			<head>
+				<script dangerouslySetInnerHTML={{ __html: pickTheme }} />
+			</head>
 			<body>
 				<Background />
 				<div className="relative mx-auto flex min-h-screen w-full max-w-page flex-col px-6 pb-24 pt-8 sm:pt-11 lg:px-0">
-					<nav className="flex items-baseline justify-between text-sm leading-[22px] text-muted">
-						<Link href="/" className="text-ink">
-							estevão goerll
-						</Link>
+					<nav className="flex justify-center text-sm leading-[22px] text-muted">
 						<Nav />
 					</nav>
 					<main className="flex flex-1 flex-col">{children}</main>

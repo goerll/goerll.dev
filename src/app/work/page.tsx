@@ -77,8 +77,8 @@ function Timeline({ label, entries }: { label: string; entries: Entry[] }) {
 					>
 						{e.now ? (
 							<>
-								<span className="absolute -left-[5px] top-[9px] h-[9px] w-[9px] rounded-full bg-moss shadow-[0_0_0_4px_rgba(207,227,176,0.15)]" />
-								<span className="text-moss">now</span>
+								<span className="absolute -left-[5px] top-[9px] h-[9px] w-[9px] rounded-full bg-accent shadow-[0_0_0_4px_rgb(var(--accent)/0.12)]" />
+								<span className="text-accent">now</span>
 								<span className="text-dim"> · {e.when}</span>
 							</>
 						) : (

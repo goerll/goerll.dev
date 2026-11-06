@@ -1,5 +1,4 @@
 export const INK = '230,226,216';
-export const MOSS = '207,227,176';
 
 export interface Pointer {
 	x: number;
@@ -18,6 +17,8 @@ export interface Env {
 	font: string;
 	/** on reading pages, the text column to keep clear; null on home */
 	focus: { left: number; right: number } | null;
+	/** on home, the text blocks (elements marked data-avoid) to swim around */
+	avoid: { left: number; right: number; top: number; bottom: number }[];
 }
 
 export interface Scene {
@@ -30,6 +31,8 @@ export interface Scene {
 	/** pick up what's at (x, y); it follows env.pointer until release */
 	grab?(x: number, y: number): boolean;
 	release?(): void;
+	/** a short readout for the corner counter */
+	stats?(): string;
 }
 
 export const rand = (a: number, b: number) => a + Math.random() * (b - a);

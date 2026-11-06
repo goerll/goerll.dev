@@ -5,17 +5,17 @@ const config: Config = {
 	theme: {
 		extend: {
 			colors: {
-				bg: '#151614',
-				ink: '#e6e2d8',
-				soft: '#a9a59b',
-				muted: '#7d7a72',
-				dim: '#5c5a54',
-				sep: '#4a4843',
-				moss: '#cfe3b0',
-				panel: '#1b1c19',
-				line: '#2a2c27',
-				rule: '#23251f',
-				row: '#262822'
+				bg: 'rgb(var(--bg) / <alpha-value>)',
+				ink: 'rgb(var(--ink) / <alpha-value>)',
+				soft: 'rgb(var(--soft) / <alpha-value>)',
+				muted: 'rgb(var(--muted) / <alpha-value>)',
+				dim: 'rgb(var(--dim) / <alpha-value>)',
+				sep: 'rgb(var(--sep) / <alpha-value>)',
+				accent: 'rgb(var(--accent) / <alpha-value>)',
+				panel: 'rgb(var(--panel) / <alpha-value>)',
+				line: 'rgb(var(--line) / <alpha-value>)',
+				rule: 'rgb(var(--rule) / <alpha-value>)',
+				row: 'rgb(var(--row) / <alpha-value>)'
 			},
 			fontFamily: {
 				mono: ['var(--font-plex)', 'ui-monospace', 'monospace']

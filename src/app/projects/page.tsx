@@ -30,7 +30,7 @@ function Meta({ stack, label, href }: { stack: string; label: string; href: stri
 	return (
 		<p className="label">
 			{stack} <span className="text-sep">/</span>{' '}
-			<a href={href} target="_blank" rel="noopener noreferrer" className="text-moss hover:underline">
+			<a href={href} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
 				{label} ↗
 			</a>
 		</p>
@@ -134,7 +134,7 @@ export default function Projects() {
 							href={row.href}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="text-[13px] text-muted transition-colors hover:text-moss sm:w-[120px] sm:shrink-0 sm:text-right"
+							className="text-[13px] text-muted transition-colors hover:text-accent sm:w-[120px] sm:shrink-0 sm:text-right"
 						>
 							{row.link} ↗
 						</a>
