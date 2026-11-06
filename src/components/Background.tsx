@@ -110,8 +110,9 @@ export function Background() {
 		window.addEventListener('pointercancel', onUp);
 		document.documentElement.addEventListener('pointerleave', onLeave);
 
-		// without an animation loop, repaint when the nav toggle flips the theme
-		const themeWatch = new MutationObserver(() => reduceMotion && scene.draw(performance.now()));
+		// repaint as soon as the theme flips, so the theme transition captures
+		// the new colors (and, without an animation loop, so they show at all)
+		const themeWatch = new MutationObserver(() => scene.draw(performance.now()));
 		themeWatch.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
 		let raf = 0;
