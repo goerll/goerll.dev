@@ -35,6 +35,45 @@ export function Nav() {
 	);
 }
 
+const TOKENS = ['bg', 'ink', 'soft', 'muted', 'dim', 'sep', 'accent', 'panel', 'line', 'rule', 'row', 'light'];
+const read = (root: HTMLElement) => {
+	const css = getComputedStyle(root);
+	return TOKENS.map((t) => css.getPropertyValue(`--${t}`).trim().split(/\s+/).map(Number));
+};
+const ease = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
+let switching = 0;
+
+/**
+ * Moves the page between the themes the way light moves through water: the
+ * scene's light shafts flare up and spread (--surge, read by the jellyfish
+ * scene) while every color variable fades from one theme to the other.
+ * Going dark the light just ebbs away. Reduced motion flips it at once.
+ */
+function switchTheme(light: boolean) {
+	const root = document.documentElement;
+	cancelAnimationFrame(switching);
+	const from = read(root); // mid-switch, this picks up where it was
+	for (const t of [...TOKENS, 'surge']) root.style.removeProperty(`--${t}`);
+	root.dataset.theme = light ? 'light' : 'dark';
+	if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+	const to = read(root);
+	const duration = light ? 1800 : 1400;
+	const start = performance.now();
+	const frame = (now: number) => {
+		const p = Math.min(1, (now - start) / duration);
+		// going light the shafts flare first and the water follows
+		const k = light ? ease((p - 0.15) / 0.75) : ease(p / 0.8);
+		const surge = light ? (p < 0.4 ? ease(p / 0.4) : 1 - ease((p - 0.4) / 0.6)) : 0.35 * (1 - p) ** 2;
+		TOKENS.forEach((t, i) =>
+			root.style.setProperty(`--${t}`, from[i].map((v, j) => +(v + (to[i][j] - v) * k).toFixed(t === 'light' ? 3 : 0)).join(' '))
+		);
+		root.style.setProperty('--surge', surge.toFixed(3));
+		if (p < 1) switching = requestAnimationFrame(frame);
+		else for (const t of [...TOKENS, 'surge']) root.style.removeProperty(`--${t}`);
+	};
+	switching = requestAnimationFrame(frame);
+}
+
 /** Switches between the dark default and the light theme. */
 function ThemeToggle() {
 	const [light, setLight] = useState<boolean | null>(null);
@@ -46,7 +85,7 @@ function ThemeToggle() {
 			aria-label={light ? 'Switch to the dark theme' : 'Switch to the light theme'}
 			onClick={() => {
 				const next = !light;
-				document.documentElement.dataset.theme = next ? 'light' : 'dark';
+				switchTheme(next);
 				setLight(next);
 			}}
 			className="flex h-[22px] w-4 items-center justify-center transition-colors hover:text-ink"

@@ -17,7 +17,31 @@ import { type Env, type Scene, INK, rand } from './types';
 const C = 10; // cell size in px
 // dark water by night, sunlit shallows on paper by day (see globals.css)
 const DARK = { glass: '226,224,218', lilac: '214,160,198', bg: '26,25,24', snow: INK, glassK: 1, lilacK: 1, shafts: 1 };
-const LIGHT = { glass: '58,55,50', lilac: '170,92,120', bg: '236,235,230', snow: '90,86,80', glassK: 0.9, lilacK: 1.2, shafts: 0.7 };
+type Palette = typeof DARK;
+const SUN = '250,246,232';
+const mixRgb = (a: string, b: string, k: number) => {
+	const bs = b.split(',');
+	return a
+		.split(',')
+		.map((v, i) => Math.round(+v + (+bs[i] - +v) * k))
+		.join(',');
+};
+/** The water between dark (0) and sunlit (1), for the theme switch. */
+const mix = (k: number): Palette =>
+	k <= 0
+		? DARK
+		: k >= 1
+			? LIGHT
+			: {
+					glass: mixRgb(DARK.glass, LIGHT.glass, k),
+					lilac: mixRgb(DARK.lilac, LIGHT.lilac, k),
+					bg: mixRgb(DARK.bg, LIGHT.bg, k),
+					snow: mixRgb(DARK.snow, LIGHT.snow, k),
+					glassK: DARK.glassK + (LIGHT.glassK - DARK.glassK) * k,
+					lilacK: DARK.lilacK + (LIGHT.lilacK - DARK.lilacK) * k,
+					shafts: DARK.shafts + (LIGHT.shafts - DARK.shafts) * k
+				};
+const LIGHT = { glass: '58,55,50', lilac: '170,92,120', bg: '220,217,209', snow: '90,86,80', glassK: 0.9, lilacK: 1.2, shafts: 0.7 };
 
 interface Tentacle {
 	/** where it hangs from, across the bell: -1 (left rim) to 1 (right rim) */
@@ -333,19 +357,23 @@ export function jellyfish(env: Env): Scene {
 		},
 		draw(time) {
 			cells = new Map();
-			const pal = document.documentElement.dataset.theme === 'light' ? LIGHT : DARK;
+			const css = getComputedStyle(document.documentElement);
+			const pal = mix(+css.getPropertyValue('--light') || 0);
+			// while the theme switches, the shafts flare up, widen and reach deeper
+			const surge = +css.getPropertyValue('--surge') || 0;
+			const shaftColor = surge ? mixRgb(pal.snow, SUN, Math.min(1, surge * 1.5)) : pal.snow;
 
 			// three slanted shafts of light from the surface, slowly swaying
 			for (let i = 0; i < 3; i++) {
 				const x0 = env.w * (0.18 + i * 0.3) + Math.sin(time * 0.00012 + i * 2) * 60;
-				const width = 50 + i * 14 + Math.sin(time * 0.0002 + i) * 14;
-				const depth = env.h * 0.85;
+				const width = (50 + i * 14 + Math.sin(time * 0.0002 + i) * 14) * (1 + surge * 2.2);
+				const depth = env.h * (0.85 + surge * 0.4);
 				for (let y = 0; y < depth; y += C) {
 					const mid = x0 + y * 0.32;
 					const fade = 1 - y / depth;
 					for (let x = mid - width / 2; x < mid + width / 2; x += C) {
 						const edge = 1 - Math.abs(x - mid) / (width / 2);
-						put(x, y, 0.035 * fade * edge * pal.shafts, pal.snow, hash(Math.floor(x / C), Math.floor(y / C), i) > 0.7 ? '.' : ' ');
+						put(x, y, (0.035 + surge * 0.16) * fade * edge * pal.shafts, shaftColor, hash(Math.floor(x / C), Math.floor(y / C), i) > 0.7 ? '.' : ' ');
 					}
 				}
 			}

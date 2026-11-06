@@ -16,21 +16,26 @@
 		--line: 46 44 42;
 		--rule: 38 36 34;
 		--row: 42 40 38;
+		/* how sunlit the water is, and a brief surge of light while switching;
+		   the nav toggle animates both, and the jellyfish scene reads them */
+		--light: 0;
+		--surge: 0;
 		color-scheme: dark;
 	}
 
 	:root[data-theme='light'] {
-		--bg: 236 235 230;
+		--bg: 220 217 209;
 		--ink: 31 30 28;
-		--soft: 79 76 71;
-		--muted: 119 115 108;
-		--dim: 151 147 139;
-		--sep: 189 185 177;
+		--soft: 76 73 68;
+		--muted: 112 108 101;
+		--dim: 138 134 126;
+		--sep: 178 174 166;
 		--accent: 0 0 0;
-		--panel: 244 243 239;
-		--line: 214 211 204;
-		--rule: 224 221 214;
-		--row: 228 226 220;
+		--panel: 227 224 217;
+		--line: 199 195 187;
+		--rule: 208 204 196;
+		--row: 212 209 201;
+		--light: 1;
 		color-scheme: light;
 	}
 
